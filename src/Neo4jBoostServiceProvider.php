@@ -49,9 +49,6 @@ class Neo4jBoostServiceProvider extends ServiceProvider
         if (! class_exists(\Laravel\Mcp\Server\Tool::class)) {
             return;
         }
-        if (! config_path('boost.php') || ! is_file(config_path('boost.php'))) {
-            return;
-        }
 
         $ourTools = [
             \Neo4j\LaravelBoost\Boost\Tools\GetSchemaTool::class,
