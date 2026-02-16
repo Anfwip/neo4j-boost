@@ -130,18 +130,26 @@ class Neo4jBinaryClient implements Neo4jMcpClientInterface
     /** @return array<string, mixed> */
     private function readResponse($stream, int $expectedId): array
     {
-        $line = fgets($stream);
-        if ($line === false) {
-            throw new \RuntimeException('Neo4j MCP did not respond.');
+        while (true) {
+            $line = fgets($stream);
+            if ($line === false) {
+                throw new \RuntimeException('Neo4j MCP did not respond.');
+            }
+            $decoded = json_decode(trim($line), true);
+            if (! is_array($decoded)) {
+                throw new \RuntimeException('Neo4j MCP returned invalid JSON.');
+            }
+            // Notifications have no id; skip them
+            if (! array_key_exists('id', $decoded)) {
+                continue;
+            }
+            if ((int) $decoded['id'] !== $expectedId) {
+                throw new \RuntimeException(
+                    'Neo4j MCP returned response with unexpected id (expected ' . $expectedId . ').'
+                );
+            }
+            return $decoded;
         }
-        $decoded = json_decode(trim($line), true);
-        if (! is_array($decoded)) {
-            throw new \RuntimeException('Neo4j MCP returned invalid JSON.');
-        }
-        if (isset($decoded['id']) && (int) $decoded['id'] !== $expectedId) {
-            // Still return so caller can check error/result
-        }
-        return $decoded;
     }
 
     /** @param array<string, mixed> $arr */
